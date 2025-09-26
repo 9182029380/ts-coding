@@ -1,19 +1,3 @@
-"use strict";
-/**
- * Demo: TypeScript features + FakeStoreAPI
- * Run with: node 18+ or ts-node (see package.json)
- */
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -50,96 +34,74 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-var API = 'https://fakestoreapi.com/products';
-/* ============================
-   Generic typed fetch helper
-   ============================ */
-function fetchJson(url) {
+// =============== 2. Async helper functions ===============
+// Fetch product by ID
+function fetchProduct(id) {
     return __awaiter(this, void 0, void 0, function () {
-        var res;
+        var res, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, fetch(url)];
+                case 0:
+                    _a.trys.push([0, 3, , 4]);
+                    return [4 /*yield*/, fetch("https://fakestoreapi.com/products/".concat(id))];
                 case 1:
                     res = _a.sent();
                     if (!res.ok)
-                        throw new Error("HTTP ".concat(res.status));
+                        return [2 /*return*/, null];
                     return [4 /*yield*/, res.json()];
-                case 2: return [2 /*return*/, (_a.sent())];
+                case 2: return [2 /*return*/, _a.sent()];
+                case 3:
+                    error_1 = _a.sent();
+                    console.error("Fetch failed:", error_1);
+                    return [2 /*return*/, null];
+                case 4: return [2 /*return*/];
             }
         });
     });
 }
-/* ============================
-   Type-safe sort function (type-proof)
-   - using generics and keyof
-   - "typrof" interpreted as "type-proof"
-   ============================ */
-function sortByKey(arr, key, ascending) {
-    if (ascending === void 0) { ascending = true; }
-    var copy = __spreadArray([], arr, true);
-    copy.sort(function (a, b) {
-        // narrow to unknown then to number|string to make comparator generic
-        var va = a[key];
-        var vb = b[key];
-        if (va === vb)
-            return 0;
-        // handle number or string comparators
-        var comp = va > vb ? 1 : -1;
-        return ascending ? comp : -comp;
-    });
-    return copy;
+// Check if product is in stock (using rating.count as proxy for inventory)
+function checkInventory(product) {
+    return Promise.resolve(product.rating.count > 0); // If count > 0, assume in stock
 }
-function applyDiscount(p, percent) {
-    var discountedPrice = +(p.price * (1 - percent / 100)).toFixed(2);
-    // We return a new object that keeps original fields + discountedPrice
-    return __assign(__assign({}, p), { discountedPrice: discountedPrice });
+// Apply discount (e.g., 15% off)
+function applyDiscount(product, discountPercent) {
+    if (discountPercent === void 0) { discountPercent = 15; }
+    return Promise.resolve(Number((product.price * (1 - discountPercent / 100)).toFixed(2)));
 }
-// We can also create a runtime helper that uses the type information to guide safe code:
-function isInStock(p) {
-    return !!(p.rating && p.rating.count > 0);
-}
-function trackEvent(event) {
-    // type-safe event signature
-    console.log('TRACK EVENT:', event);
-}
-/* ============================
-   Main demo flow
-   ============================ */
-function main() {
+// =============== 4. Main e-commerce workflow ===============
+function processProductForCheckout(productId) {
     return __awaiter(this, void 0, void 0, function () {
-        var products, sortedAsc, discounted, some, partialUpdate;
+        var product, isInStock, finalPrice;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, fetchJson(API)];
+                case 0: return [4 /*yield*/, fetchProduct(productId)];
                 case 1:
-                    products = _a.sent();
-                    console.log("Fetched ".concat(products.length, " products."));
-                    sortedAsc = sortByKey(products, 'price', true);
-                    console.log('Cheapest product:', sortedAsc[0].title, '-', sortedAsc[0].price);
-                    discounted = applyDiscount(sortedAsc[0], 15);
-                    console.log('Applied discount:', discounted.title, 'original:', sortedAsc[0].price, 'discounted:', discounted.discountedPrice);
-                    some = products[0];
-                    console.log('Product has rating?', !!some.rating);
-                    console.log('In stock (runtime):', isInStock(some));
-                    partialUpdate = { id: some.id, price: some.price + 10, title: 'New title (patch demo)' };
-                    console.log('Partial DTO for patch:', partialUpdate);
-                    // 7) Template literal analytics events
-                    trackEvent("product:".concat(some.id, ":view"));
-                    trackEvent("product:".concat(some.id, ":add-to-cart"));
+                    product = _a.sent();
+                    if (!product) {
+                        console.log("\u274C Product #".concat(productId, " not found."));
+                        return [2 /*return*/];
+                    }
+                    return [4 /*yield*/, checkInventory(product)];
+                case 2:
+                    isInStock = _a.sent();
+                    if (!isInStock) {
+                        console.log("\u26A0\uFE0F  \"".concat(product.title, "\" is out of stock!"));
+                        return [2 /*return*/];
+                    }
+                    return [4 /*yield*/, applyDiscount(product, 20)];
+                case 3:
+                    finalPrice = _a.sent();
+                    // Step 4: Safe to use — all types are unwrapped and known
+                    console.log("\u2705 Ready for checkout!");
+                    console.log("\uD83D\uDCE6 Product: ".concat(product.title));
+                    console.log("\uD83D\uDCB0 Original: $".concat(product.price));
+                    console.log("\uD83C\uDFF7\uFE0F  Discounted: $".concat(finalPrice));
+                    console.log("\uD83D\uDCCA Rating: ".concat(product.rating.rate, " \u2B50 (").concat(product.rating.count, " reviews)"));
                     return [2 /*return*/];
             }
         });
     });
 }
-main().catch(function (err) { return console.error(err); });
+// =============== 5. Run the example ===============
+// Try with product ID 1 (Backpack)
+processProductForCheckout(1);

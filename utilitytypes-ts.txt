@@ -1,0 +1,711 @@
+
+
+Built-in Utility Types:
+
+TypeScript provides a set of globally available, built-in utility types designed to facilitate common type 
+transformations and manipulations. These are not classes in the traditional sense, but rather type functions
+that operate on existing types to create new ones. Examples include:
+
+Partial<Type>: Makes all properties of Type optional.
+Required<Type>: Makes all properties of Type mandatory.
+Readonly<Type>: Makes all properties of Type read-only.
+Pick<Type, Keys>: Creates a new type by selecting a subset of properties (Keys) from Type.
+Omit<Type, Keys>: Creates a new type by excluding a subset of properties (Keys) from Type.
+Record<KeyType, ValueType>: Defines an object type with specific key and value types. 
+NonNullable<Type>: Excludes null and undefined from Type.
+ReturnType<Type>: Extracts the return type of a function Type.
+These utility types are invaluable for enhancing type safety and reducing redundancy in type definitions.
+
+
+
+The TypeScript utility type Partial<Type> constructs a type with all properties of Type set to optional.
+This means that any property that was previously required in Type will become optional in the new type created by Partial<Type>.
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+// Create a type where all properties of User are optional
+type PartialUser = Partial<User>;
+
+// Example usage:
+const userUpdate: PartialUser = {
+  name: "Jane Doe", // Only update the name
+  // id and email are optional and can be omitted
+};
+
+const newUser: PartialUser = {
+  // All properties are optional, so an empty object is also valid
+};
+
+const anotherUpdate: PartialUser = {
+  email: "new.email@example.com",
+  id: 123,
+}
+--------------------------------------
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+// Create a type where all properties of User are optional
+type PartialUser = Partial<User>;
+
+// Example usage:
+const userUpdate: PartialUser = {
+  name: "Jane Doe", // Only update the name
+  // id and email are optional and can be omitted
+};
+
+const newUser: PartialUser = {
+  // All properties are optional, so an empty object is also valid
+};
+
+const anotherUpdate: PartialUser = {
+  email: "new.email@example.com",
+  id: 123,
+};
+
+// Function to update a user object
+function updateUser(original: User, updates: PartialUser): User {
+  return { ...original, ...updates };
+}
+
+// Example:
+const existingUser: User = {
+  id: 1,
+  name: "John Doe",
+  email: "john.doe@example.com",
+};
+
+const updatedUser = updateUser(existingUser, userUpdate);
+console.log(updatedUser);
+// Output: { id: 1, name: "Jane Doe", email: "john.doe@example.com" }
+
+
+-----------------------------------------------------
+The Required<Type> utility type in TypeScript constructs a type consisting of all properties of Type set to required.
+ It removes the ? optional modifier from each property, 
+ensuring that all fields must be provided when an object of this new type is created.
+
+interface User {
+  id: number;
+  name?: string; // Optional property
+  email?: string; // Optional property
+}
+
+// Create a new type where all properties of User are mandatory
+type CompleteUser = Required<User>;
+
+// This will now cause a TypeScript error because 'name' and 'email' are missing
+// const incompleteUser: CompleteUser = { id: 1 }; 
+
+// This is valid as all properties are provided
+const completeUser: CompleteUser = {
+  id: 1,
+  name: "John Doe",
+  email: "john.doe@example.com",
+};
+console.log(completeUser);
+--------------------------------------------------------------
+The Readonly<Type> utility type in TypeScript constructs a type with all properties of Type set to readonly. 
+This means that once an object of the Readonly type is initialized, its properties cannot be reassigned.
+
+interface Product {
+  name: string;
+  price: number;
+}
+
+// Create a Readonly version of the Product interface
+type ReadonlyProduct = Readonly<Product>;
+
+const book: ReadonlyProduct = {
+  name: "The Hitchhiker's Guide to the Galaxy",
+  price: 12.99,
+};
+
+// This is allowed:
+console.log(book.name); // Output: The Hitchhiker's Guide to the Galaxy
+
+// This would result in a compile-time error:
+// book.name = "The Restaurant at the End of the Universe"; // Error: Cannot assign to 'name' because it is a read-only property.
+-----------------------------------------------------------
+The Pick<Type, Keys> utility type in TypeScript constructs a new type by selecting a 
+specified set of properties (Keys) from an existing type (Type). 
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  passwordHash: string;
+  createdAt: Date;
+}
+
+// Create a new type 'PublicUser' by picking 'id', 'name', and 'email' from 'User'
+type PublicUser = Pick<User, 'id' | 'name' | 'email'>;
+
+const guest: PublicUser = {
+  id: 123,
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+};
+
+// Attempting to assign a property not in PublicUser will result in a type error
+// const invalidGuest: PublicUser = {
+//   id: 456,
+//   name: 'Jane Smith',
+//   email: 'jane.smith@example.com',
+//   passwordHash: 'hashedPassword123', // Error: 'passwordHash' does not exist in type 'PublicUser'
+// };
+-------------------------------------------------------------------
+The TypeScript utility type Omit<Type, Keys> constructs a new type by taking all properties 
+from Type and excluding those specified in Keys. 
+This is useful for creating variations of existing types where certain properties are not needed or should not be exposed
+
+In this example, PublicUser includes id, name, and email, but specifically omits passwordHash and isAdmin,
+ providing a safer type for public-facing data.
+ 
+ type User = {
+  id: number;
+  name: string;
+  email: string;
+  passwordHash: string;
+  isAdmin: boolean;
+};
+type PublicUser = Omit<User, 'passwordHash' | 'isAdmin'>;
+
+const publicUserProfile: PublicUser = {
+  id: 1,
+  name: "Alice",
+  email: "alice@example.com",
+};
+
+// The following would result in a TypeScript error:
+// const invalidPublicUserProfile: PublicUser = {
+//   id: 2,
+//   name: "Bob",
+//   email: "bob@example.com",
+//   passwordHash: "someHash", // Error: 'passwordHash' does not exist in type 'PublicUser'.
+// };
+-----------------------------------------------------------------------------------------
+The Record<KeyType, ValueType> utility type in TypeScript defines an object type where all
+ keys conform to KeyType and all values conform to ValueType.
+This provides a structured way to define objects with consistent key and value types.
+
+
+type UserStatus = 'active' | 'inactive' | 'pending';
+
+type UserStatusMap = Record<string, UserStatus>;
+
+const statusData: UserStatusMap = {
+  john: 'active',
+  jane: 'pending',
+  doe: 'inactive',
+};
+
+// This would result in a TypeScript error because 'invalid' is not a valid UserStatus:
+// const invalidStatusData: UserStatusMap = {
+//   peter: 'invalid',
+// };
+--------------------------------------------------------------------------
+The NonNullable<Type> utility type in TypeScript constructs a type by excluding null and undefined from the given Type. 
+It ensures that the resulting type cannot hold these nullable values. 
+This utility is especially helpful when working with optional values or APIs that may return null/undefined, 
+and you want to ensure type safety after validation.
+
+
+type MaybeString = string | null | undefined;
+
+type DefinitelyString = NonNullable<MaybeString>;
+// Result: string
+
+
+Explanation:
+MaybeString can be a string, null, or undefined.
+NonNullable<MaybeString> removes null and undefined, leaving only string.
+
+function processValue(value: MaybeString): DefinitelyString {
+  if (value === null || value === undefined) {
+    throw new Error('Value cannot be null or undefined');
+  }
+  return value; // TypeScript now knows `value` is just `string`
+}
+
+Scenario:
+You're building a cart feature and need to calculate the total price of items. 
+Some cart items might have a discount field that could be null or undefined (e.g., if no discount is applied).
+ After filtering out invalid items, you want to safely process only items with valid discounts.
+ 
+ type CartItem = {
+  id: string;
+  price: number;
+  discount: number | null | undefined; // Discount % (e.g., 10 for 10% off)
+};
+
+const cartItems: CartItem[] = [
+  { id: "1", price: 100, discount: 10 },
+  { id: "2", price: 50, discount: null },
+  { id: "3", price: 80, discount: undefined },
+];
+
+// Filter items with valid discounts and calculate discounted prices
+const discountedPrices = cartItems
+  .map(item => {
+    if (item.discount != null) {
+      // item.discount is now NonNullable<typeof item.discount> (i.e., `number`)
+      return item.price * (1 - item.discount / 100);
+    }
+    return null;
+  })
+  //.filter((price): price is number => price !== null && price !== undefined);
+  .filter((price): price is NonNullable<typeof price> => price !== null);
+
+// Result: [90] (only the first item had a valid discount)
+//console.log(discountedPrices); // [90]
+
+
+// Later in your e-commerce app:
+const totalDiscounted = discountedPrices.reduce((sum, price) => sum + price, 0);
+// Now safe: all values are numbers, no nulls
+console.log(totalDiscounted); // Correct total
+
+
+Why NonNullable Matters Here:
+The type of item.discount inside the if block is automatically narrowed to number (thanks to TypeScript's control flow analysis).
+NonNullable<typeof price> in the filter’s type predicate explicitly removes null from the array, resulting in number[] instead of (number | null)[].
+This ensures discountedPrices is guaranteed to contain only numbers, making downstream operations (e.g., summing totals) type-safe.
+
+This does two critical things:
+
+Removes null values from the array at runtime.
+Tells TypeScript: “After this filter, every element is definitely a number.”
+→ Resulting type: number[]
+→ Safe to sum, send to APIs, display, etc.
+------------------------------------------------------------------------------------
+The ReturnType<Type> utility type in TypeScript extracts the return type of a given function type Type
+
+function greet(name: string): string {
+  return `Hello, ${name}!`;
+}
+
+type GreetReturnType = ReturnType<typeof greet>; // GreetReturnType will be 'string'
+
+const message: GreetReturnType = "Welcome!"; // This is valid because 'message' is inferred as 'string'
+// const invalidMessage: GreetReturnType = 123; // This would cause a TypeScript error as '123' is not a 'string'
+
+
+// 🛒 E-Commerce Cart Item
+type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+};
+
+// 💰 Function that calculates the total cart amount
+function calculateCartTotal(items: CartItem[]): number {
+  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+// 🔍 Extract the return type of `calculateCartTotal`
+type CartTotal = ReturnType<typeof calculateCartTotal>; // = number
+
+// 🧾 Example cart data
+const shoppingCart: CartItem[] = [
+  { id: "p1", name: "Wireless Headphones", price: 99.99, quantity: 2 },
+  { id: "p2", name: "Phone Case", price: 19.99, quantity: 1 },
+  { id: "p3", name: "USB Cable", price: 12.5, quantity: 3 }
+];
+
+// ✅ Calculate total — typed as `CartTotal` (i.e., `number`)
+const totalAmount: CartTotal = calculateCartTotal(shoppingCart);
+
+// 💳 Payment processing function that ONLY accepts the correct total type
+function processPayment(amount: CartTotal): void {
+  console.log(`Processing payment of $${amount.toFixed(2)}...`);
+  // In real app: call payment gateway API
+}
+
+// 🚀 Use it safely
+processPayment(totalAmount); // ✅ Safe: `totalAmount` is guaranteed to be a number
+
+// 🔒 This would cause a TypeScript error (good!):
+// processPayment("150"); // ❌ Error: Argument of type 'string' is not assignable to parameter of type 'number'
+
+// 📊 Optional: Log the result
+console.log(`Cart total: $${totalAmount.toFixed(2)}`);
+// Output: Cart total: $257.47
+
+ReturnType<typeof calculateCartTotal> is especially powerful when the function’s 
+return type is complex (e.g., an object), but even with number,
+ it enforces consistency across your app. 
+ 
+ 
+ Type safety: Ensures payment amounts are always number, never strings or undefined.
+Refactoring confidence: If calculateCartTotal ever changes its return type (e.g., to string by mistake), 
+TypeScript will flag all usages like processPayment.
+Self-documenting code: CartTotal clearly expresses intent — it’s not just any number, it’s the result of a cart calculation.
+
+---------------------------------------------------------------------
+
+✅ Custom Utility Classes with Static Methods
+A utility class is a class that contains only static methods (and sometimes static properties). 
+It’s used to group related helper functions under a single, meaningful namespace—without needing to create an instance.
+
+// Utility class to format prices consistently across the app
+class PriceFormatter {
+  // Static method: formats a number as currency (e.g., USD)
+  static toUSD(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  }
+
+  // Static method: applies tax and returns formatted price
+  static withTax(amount: number, taxRate: number = 0.08): string {
+    const total = amount * (1 + taxRate);
+    return this.toUSD(total); // ✅ 'this' refers to the class itself
+  }
+
+  // Static method: checks if a price is within budget
+  static isAffordable(price: number, budget: number): boolean {
+    return price <= budget;
+  }
+}
+
+// ✅ Usage — no "new PriceFormatter()" needed!
+const itemPrice = 89.99;
+
+console.log(PriceFormatter.toUSD(itemPrice));        
+// Output: "$89.99"
+
+console.log(PriceFormatter.withTax(itemPrice));      
+// Output: "$97.19" (with 8% tax)
+
+console.log(PriceFormatter.isAffordable(100, 150)); 
+// Output: true
+ Important Rules for Utility Classes:
+No constructor (or private constructor to prevent instantiation):
+
+class PriceFormatter {
+  private constructor() {} // Prevents `new PriceFormatter()`
+  // ... static methods
+}
+Only static members — no instance properties or methods.
+Stateless — utility methods should not rely on or modify internal state.
+💡 Real-World E-Commerce Use Cases:
+Formatting prices, dates, or shipping info
+Validating coupons or promo codes
+Calculating discounts, taxes, or shipping costs
+Sanitizing user input (e.g., phone numbers, ZIP codes)
+ Utility classes keep your code clean, reusable, and self-documenting — perfect for shared logic in large apps 
+ like e-commerce platforms. 
+
+----------------------------------------------------------------------------------------------------------
+Awaited<Type> – TypeScript Utility Type
+What it does:
+Awaited<Type> recursively unwraps Promises from a type. It gives you the type you get after awaiting a value.
+Useful when working with async functions and you need the resolved type (not the Promise<...> wrapper)
+// Simulate an API call that returns a Promise
+async function fetchProduct(id: string): Promise<{
+  id: string;
+  name: string;
+  price: number;
+  inStock: boolean;
+}> {
+  // In real app: fetch from backend
+  return {
+    id,
+    name: "Wireless Earbuds",
+    price: 129.99,
+    inStock: true
+  };
+}
+
+// Get the return type of the async function
+type ProductResponse = ReturnType<typeof fetchProduct>;
+// Type: Promise<{ id: string; name: string; price: number; inStock: boolean; }>
+
+// ✅ Use Awaited to get the *resolved* type (what you get after `await`)
+type Product = Awaited<ProductResponse>;
+// Type: { id: string; name: string; price: number; inStock: boolean; }
+
+// Now use it in a component or service
+async function displayProduct(id: string) {
+  const product: Product = await fetchProduct(id); // ✅ Perfectly typed!
+  console.log(`Product: ${product.name}, Price: $${product.price}`);
+}
+// Output: Product: Wireless Earbuds, Price: $129.99
+
+// Example usage
+displayProduct("p123");
+
+💡 Why Awaited Matters in E-Commerce:
+You often chain async operations (e.g., fetch product → check inventory → apply discount).
+Without Awaited, you’d have to manually unwrap Promise<...> types, which gets messy with nested promises.
+Ensures type safety when handling API responses in checkout, cart, or product pages.
+✅ Key takeaway:
+Awaited<Promise<T>> → T
+Awaited<Promise<Promise<string>>> → string (it unwraps recursively!) 
+
+This keeps your async data flow clean and strongly typed!
+----------------------------------------------------------------------------
+
+Absolutely! Here's a **complete, runnable TypeScript code example** that uses the **Fake Store API** (`https://fakestoreapi.com/products`) and demonstrates how `Awaited<Type>` helps maintain **type safety** across a realistic e-commerce async flow:
+
+> **fetch product → check inventory → apply discount → display result**
+
+---
+
+### ✅ Complete Code with `Awaited`
+
+```ts
+// =============== 1. Define types based on Fake Store API ===============
+type Product = {
+  id: number;
+  title: string;
+  price: number;
+  description: string;
+  category: string;
+  image: string;
+  rating: {
+    rate: number;
+    count: number; // We'll treat `count` as inventory level
+  };
+};
+
+// =============== 2. Async helper functions ===============
+// Fetch product by ID
+async function fetchProduct(id: number): Promise<Product | null> {
+  try {
+    const res = await fetch(`https://fakestoreapi.com/products/${id}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    return null;
+  }
+}
+
+// Check if product is in stock (using rating.count as proxy for inventory)
+async function checkInventory(product: Product): Promise<boolean> {
+  return product.rating.count > 0; // If count > 0, assume in stock
+}
+
+// Apply discount (e.g., 15% off)
+async function applyDiscount(product: Product, discountPercent: number = 15): Promise<number> {
+  return Number((product.price * (1 - discountPercent / 100)).toFixed(2));
+}
+
+// =============== 3. Use Awaited to extract resolved types ===============
+type FetchedProduct = Awaited<ReturnType<typeof fetchProduct>>;     // Product | null
+type IsInStock      = Awaited<ReturnType<typeof checkInventory>>;   // boolean
+type FinalPrice     = Awaited<ReturnType<typeof applyDiscount>>;    // number
+
+// =============== 4. Main e-commerce workflow ===============
+async function processProductForCheckout(productId: number): Promise<void> {
+  // Step 1: Fetch product
+  const product: FetchedProduct = await fetchProduct(productId);
+  if (!product) {
+    console.log(`❌ Product #${productId} not found.`);
+    return;
+  }
+
+  // Step 2: Check inventory
+  const isInStock: IsInStock = await checkInventory(product);
+  if (!isInStock) {
+    console.log(`⚠️  "${product.title}" is out of stock!`);
+    return;
+  }
+
+  // Step 3: Apply discount
+  const finalPrice: FinalPrice = await applyDiscount(product, 20); // 20% off
+
+  // Step 4: Safe to use — all types are unwrapped and known
+  console.log(`✅ Ready for checkout!`);
+  console.log(`📦 Product: ${product.title}`);
+  console.log(`💰 Original: $${product.price}`);
+  console.log(`🏷️  Discounted: $${finalPrice}`);
+  console.log(`📊 Rating: ${product.rating.rate} ⭐ (${product.rating.count} reviews)`);
+}
+
+// =============== 5. Run the example ===============
+// Try with product ID 1 (Backpack)
+processProductForCheckout(1);
+```
+
+---
+
+### 🔍 What `Awaited` Gives You
+
+| Function Call | `ReturnType<typeof fn>` | `Awaited<ReturnType<typeof fn>>` |
+|--------------|--------------------------|----------------------------------|
+| `fetchProduct` | `Promise<Product \| null>` | `Product \| null` ✅ |
+| `checkInventory` | `Promise<boolean>` | `boolean` ✅ |
+| `applyDiscount` | `Promise<number>` | `number` ✅ |
+
+This means:
+- You **don’t guess** what type you get after `await`.
+- You get **compile-time safety** if the API or logic changes.
+- Your variables (`product`, `isInStock`, `finalPrice`) have **precise, non-Promise types**.
+
+---
+
+### ▶️ Expected Output (for ID = 1)
+
+```text
+✅ Ready for checkout!
+📦 Product: Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops
+💰 Original: $109.95
+🏷️  Discounted: $87.96
+📊 Rating: 3.9 ⭐ (120 reviews)
+```
+
+---
+
+### 💡 Bonus: Why This Matters in Real Apps
+- Prevents bugs like `Cannot read property 'price' of null`
+- Ensures discounts are applied to **real numbers**, not `Promise<number>`
+- Makes code **self-documenting** and easier to maintain
+
+-----------------------------------------
+Let’s walk through a realistic e-commerce scenario:
+
+
+
+### 🧱 1. Your Base Product Type (from API)
+
+```ts
+// This matches what your backend sends
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  inStock: boolean;
+  category: string;
+  imageUrl: string;
+};
+```
+
+✅ When you **fetch** products:
+```ts
+// GET /api/products → returns Product[]
+const products: Product[] = await fetchProducts();
+```
+→ Here, you **don’t use `Partial`** because the API gives you full objects.
+
+---
+
+### 🔁 2. Where `Partial<Product>` Shines: Updating a Product
+
+Now imagine an **admin dashboard** where a store manager edits a product.
+ They might only change the **price** or **stock status**, not all fields.
+
+Your **update API endpoint** likely accepts only the fields being changed:
+
+```ts
+// PATCH /api/products/:id
+// Request body: { price: 39.99, inStock: false }
+```
+
+To type this safely in TypeScript:
+
+```ts
+// ✅ Use Partial<Product> for the update payload
+async function updateProduct(id: string, changes: Partial<Product>) {
+  const response = await fetch(`/api/products/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes) // Only sends changed fields
+  });
+  return response.json();
+}
+
+// Usage:
+await updateProduct("prod-789", {
+  price: 49.99,
+  inStock: true
+  // ✅ No need to send name, description, etc.
+});
+```
+
+✅ **Benefits**:
+- You don’t have to send the entire product object.
+- TypeScript ensures you only pass **valid product fields** (no typos like `prize`).
+- Backend receives minimal, clean payload.
+
+---
+
+### 🛒 3. Other Real-World Uses in E-commerce
+
+#### A. **Shopping Cart / Draft Product**
+When a user is **creating a product** (e.g., seller dashboard), the form might be incomplete:
+
+```ts
+const draftProduct: Partial<Product> = {
+  name: "New Sneakers",
+  price: 89.99
+  // description, category, etc. not filled yet
+};
+```
+
+You can safely collect partial data before submission.
+
+#### B. **Optimistic UI Updates**
+When a user clicks “Mark as in stock”, you update the UI immediately (before API responds):
+
+```ts
+function optimisticUpdate(productId: string) {
+  setProducts(prev => 
+    prev.map(p => 
+      p.id === productId ? { ...p, inStock: true } : p
+    )
+  );
+
+  // Later, sync with backend using Partial
+  updateProduct(productId, { inStock: true });
+}
+```
+
+Here, `{ inStock: true }` matches `Partial<Product>`.
+
+#### C. **Filtering or Search Previews**
+Sometimes you load **partial product data** for performance (e.g., search results only need `id`, `name`, `price`):
+
+```ts
+type ProductPreview = Pick<Product, 'id' | 'name' | 'price'>;
+// But if your API is inconsistent or you're merging data,
+// Partial<Product> can act as a flexible fallback during normalization.
+```
+
+---
+
+### ❌ When NOT to Use `Partial<Product>`
+
+- **When reading full product data from API** → use `Product[]`
+- **When displaying product details** → you expect all fields
+
+---
+
+### ✅ Summary: How `Partial<Product>` Helps with API Data
+
+| Scenario                     | Use `Product`? | Use `Partial<Product>`? |
+|-----------------------------|----------------|--------------------------|
+| Fetching full product list  | ✅ Yes         | ❌ No                    |
+| Updating 1–2 fields         | ❌ No          | ✅ Yes                   |
+| Creating a new product (draft) | ❌ No       | ✅ Yes                   |
+| Optimistic UI updates       | ❌ No          | ✅ Yes                   |
+
+> 💡 **Key Insight**:  
+> `Partial<Product>` isn’t for **reading** API data — it’s for **writing** or **working with incomplete data** in a type-safe way.
+
+This keeps your e-commerce app flexible, safe, and aligned with real-world API patterns like PATCH requests. 🚀
+
+
+
+
